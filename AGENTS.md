@@ -8,3 +8,8 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Rules
+- Accounts use a custom signed HttpOnly cookie (src/lib/auth/core.server.ts), not Cloud Auth — admins live in secrets and usernames need no email.
+- The proxy route enforces sign-in and per-account site limits on page loads — UI-only checks could be bypassed.
+- The accounts table is service-role only (RLS on, no policies) — only server functions touch it.
