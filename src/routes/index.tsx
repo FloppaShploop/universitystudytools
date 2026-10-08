@@ -293,7 +293,7 @@ function StatusPill({ health }: { health: Health }) {
   const dot = health.state === "online" ? "bg-success" : health.state === "offline" ? "bg-destructive" : "bg-warning";
   const text = health.state === "online" ? `${health.ms}ms` : health.state === "offline" ? "Offline" : "…";
   return (
-    <div className="hidden items-center gap-2 rounded-full border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground md:flex" title="Gateway connection">
+    <div className="hidden items-center gap-2 rounded-full border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground md:flex" title="Connection">
       <span className={`size-2 rounded-full ${dot}`} />
       {text}
     </div>

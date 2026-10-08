@@ -134,7 +134,7 @@ export async function handleProxy(request: Request): Promise<Response> {
 
     // Open-proxy / hotlink abuse: only our own app (or direct navigation) may use the gateway.
     if (request.headers.get("sec-fetch-site") === "cross-site")
-      throw new ProxyError(403, "Cross-site use blocked", "This gateway can only be used from its own interface.");
+      throw new ProxyError(403, "Cross-site use blocked", "This site can only be used from its own interface.");
 
     const rl = takeToken(client);
     if (!rl.ok) {
@@ -171,7 +171,7 @@ export async function handleProxy(request: Request): Promise<Response> {
     release = acquire(client);
     if (!release) {
       stats.blocked++;
-      throw new ProxyError(503, "Gateway busy", "Too many simultaneous requests. Please retry shortly.");
+      throw new ProxyError(503, "Server busy", "Too many simultaneous requests. Please retry shortly.");
     }
 
     // ---- build upstream request ----
@@ -365,5 +365,5 @@ export function handleEscaped(request: Request): Response {
       /* fall through */
     }
   }
-  return errorPage(404, "Page not found", "This address doesn't exist on the gateway.");
+  return errorPage(404, "Page not found", "This address doesn't exist here.");
 }
