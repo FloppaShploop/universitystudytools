@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import {
-  ArrowLeft, ArrowRight, RotateCw, House, Maximize, Minimize, Moon, Sun, Lock, Globe, X, ShieldCheck, Film, Zap,
+  ArrowLeft, ArrowRight, RotateCw, House, Maximize, Minimize, Moon, Sun, Lock, Globe, X, ShieldCheck, Film, Zap, Users, LogOut,
 } from "lucide-react";
 import { fromProxyPath, normalizeUserInput, toProxyPath } from "@/lib/proxy/url";
+import { getViewer, signOut } from "@/lib/auth/auth.functions";
 
 type Search = { url?: string };
 
@@ -19,6 +20,11 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  loader: async () => {
+    const viewer = await getViewer();
+    if (!viewer) throw redirect({ to: "/login" });
+    return { viewer };
+  },
   component: Browser,
 });
 
@@ -33,7 +39,43 @@ const QUICK = [
 
 type Health = { state: "checking" | "online" | "offline"; ms?: number };
 
+function SiteCards({ sites, onGo }: { sites: string[]; onGo: (u: string) => void }) {
+  return (
+    <div className="bg-grid flex size-full justify-center overflow-auto px-5 py-12">
+      <div className="w-full max-w-4xl">
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">Your sites</p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight">Where to?</h1>
+        {sites.length === 0 ? (
+          <p className="mt-6 text-muted-foreground">No sites have been added to your account yet. Ask an admin for access.</p>
+        ) : (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {sites.map((s) => (
+              <button
+                key={s}
+                onClick={() => onGo("https://" + s)}
+                className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 text-left transition hover:-translate-y-0.5 hover:border-ring"
+              >
+                <img src={`https://www.google.com/s2/favicons?domain=${s}&sz=64`} alt="" className="size-10 rounded-lg bg-background p-1" />
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{s}</div>
+                  <div className="text-xs text-muted-foreground group-hover:text-primary">Open →</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Browser() {
+  const { viewer } = Route.useLoaderData();
+  const router = useRouter();
+  const logout = async () => {
+    await signOut();
+    await router.navigate({ to: "/login", replace: true });
+  };
   const search = Route.useSearch();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -192,6 +234,10 @@ function Browser() {
           </form>
 
           <StatusPill health={health} />
+          {viewer.role === "admin" && (
+            <Link to="/admin" aria-label="Manage accounts" title="Manage accounts" className="inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-accent hover:text-foreground [&_svg]:size-[18px]"><Users /></Link>
+          )}
+          <NavBtn label={`Sign out (${viewer.username})`} onClick={logout}><LogOut /></NavBtn>
           <NavBtn label={dark ? "Light mode" : "Dark mode"} onClick={() => setDark((d) => !d)}>{dark ? <Sun /> : <Moon />}</NavBtn>
           <NavBtn label={full ? "Exit fullscreen" : "Fullscreen"} onClick={toggleFull} className="hidden sm:inline-flex">{full ? <Minimize /> : <Maximize />}</NavBtn>
         </div>
@@ -221,7 +267,7 @@ function Browser() {
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads allow-presentation allow-pointer-lock allow-orientation-lock"
           />
         ) : (
-          <StartPage onGo={go} />
+          viewer.allSites ? <StartPage onGo={go} /> : <SiteCards sites={viewer.sites} onGo={go} />
         )}
       </main>
     </div>
