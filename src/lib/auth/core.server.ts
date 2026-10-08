@@ -120,7 +120,7 @@ export async function endSession(raw: string | undefined) {
 }
 
 // Short per-isolate cache so proxied sub-requests don't each hit the database.
-const cache = new Map<string, { v: Viewer | null; at: number; accountId?: string }>();
+const cache = new Map<string, { v: Viewer | null; at: number; accountId?: string | undefined }>();
 
 export async function viewerFromCookie(raw: string | undefined): Promise<Viewer | null> {
   const t = await readToken(raw);
