@@ -21,7 +21,7 @@ function safeEqual(a: string, b: string) {
 }
 
 async function hmac(data: string) {
-  const secret = process.env.SESSION_SECRET;
+  const secret = process.env["SESSION_SECRET"];
   if (!secret) throw new Error("SESSION_SECRET is not configured");
   const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   return b64u(await crypto.subtle.sign("HMAC", key, enc.encode(data)));
