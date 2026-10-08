@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect, useRouter } from "@tanstack/react-rout
 import { useState, type FormEvent } from "react";
 import { ArrowLeft, Trash2, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { createAccount, deleteAccount, getViewer, listAccounts, updateAccount } from "@/lib/auth/auth.functions";
+import { createAccount, deleteAccount, moderateAccount, getViewer, listAccounts, updateAccount } from "@/lib/auth/auth.functions";
 import { normalizeSite } from "@/lib/auth/sites";
 
 export const Route = createFileRoute("/admin")({
@@ -92,11 +92,35 @@ function AccountRow({ a, onDone }: { a: Account; onDone: () => void }) {
     await deleteAccount({ data: { id: a.id } });
     onDone();
   };
+  const mod = async (action: "kick" | "ban" | "unban") => {
+    if (action === "ban" && !confirm(`Ban ${a.username} for one week?`)) return;
+    await moderateAccount({ data: { id: a.id, action } });
+    onDone();
+  };
+  const btn = "rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:border-ring";
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="flex items-center justify-between">
-        <div className="font-mono font-medium">{a.username}</div>
-        <button onClick={del} aria-label="Delete account" className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="font-mono font-medium">{a.username}</span>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+            {a.devices} {a.devices === 1 ? "device" : "devices"} signed in
+          </span>
+          {a.banned && a.banned_until && (
+            <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-xs text-destructive">
+              Banned until {new Date(a.banned_until).toLocaleString()}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => mod("kick")} className={btn}>Kick</button>
+          {a.banned ? (
+            <button onClick={() => mod("unban")} className={btn}>Unban</button>
+          ) : (
+            <button onClick={() => mod("ban")} className={`${btn} text-destructive`}>Ban 1 week</button>
+          )}
+          <button onClick={del} aria-label="Delete account" className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+        </div>
       </div>
       <div className="mt-4"><AccessControl allSites={allSites} sites={sites} onAll={setAll} onSites={setSites} /></div>
       <div className="mt-4 flex gap-2">
@@ -146,7 +170,7 @@ function Admin() {
           </form>
           <div className="space-y-4">
             {accounts.length === 0 && <p className="text-muted-foreground">No accounts yet.</p>}
-            {accounts.map((a) => <AccountRow key={a.id + a.allowed_sites.join() + a.all_sites} a={a} onDone={refresh} />)}
+            {accounts.map((a) => <AccountRow key={a.id + a.allowed_sites.join() + a.all_sites + a.devices + a.banned} a={a} onDone={refresh} />)}
           </div>
         </div>
       </div>
