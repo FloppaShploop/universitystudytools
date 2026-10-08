@@ -8,9 +8,9 @@ import { normalizeSite } from "@/lib/auth/sites";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Accounts — Conduit admin" },
+      { title: "Accounts — University Study Tools admin" },
       { name: "description", content: "Create accounts and choose which sites each person can open." },
-      { property: "og:title", content: "Accounts — Conduit admin" },
+      { property: "og:title", content: "Accounts — University Study Tools admin" },
       { property: "og:description", content: "Create accounts and choose which sites each person can open." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

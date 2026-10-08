@@ -12,9 +12,9 @@ export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>): Search => (typeof s["url"] === "string" ? { url: s["url"] } : {}),
   head: () => ({
     meta: [
-      { title: "Conduit — Secure Streaming Web Gateway" },
+      { title: "University Study Tools" },
       { name: "description", content: "Browse JavaScript-heavy sites and stream video through a hardened, streaming web proxy." },
-      { property: "og:title", content: "Conduit — Secure Streaming Web Gateway" },
+      { property: "og:title", content: "University Study Tools" },
       { property: "og:description", content: "Browse modern sites and stream video through a hardened, streaming web proxy." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -293,7 +293,7 @@ function StatusPill({ health }: { health: Health }) {
   const dot = health.state === "online" ? "bg-success" : health.state === "offline" ? "bg-destructive" : "bg-warning";
   const text = health.state === "online" ? `${health.ms}ms` : health.state === "offline" ? "Offline" : "…";
   return (
-    <div className="hidden items-center gap-2 rounded-full border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground md:flex" title="Gateway connection">
+    <div className="hidden items-center gap-2 rounded-full border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground md:flex" title="Connection">
       <span className={`size-2 rounded-full ${dot}`} />
       {text}
     </div>
@@ -305,8 +305,8 @@ function StartPage({ onGo }: { onGo: (u: string) => void }) {
   return (
     <div className="bg-grid flex size-full items-center justify-center overflow-auto px-5 py-12">
       <div className="w-full max-w-2xl">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">Web gateway</p>
-        <h1 className="mt-3 text-5xl font-semibold tracking-tight sm:text-6xl">Conduit</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">Study tools</p>
+        <h1 className="mt-3 text-5xl font-semibold tracking-tight sm:text-6xl">University Study Tools</h1>
         <p className="mt-3 max-w-lg text-muted-foreground">
           A streaming proxy for modern sites and video. Every request is checked, rewritten and streamed — nothing is stored.
         </p>
@@ -349,7 +349,7 @@ function StartPage({ onGo }: { onGo: (u: string) => void }) {
           <Feature icon={<ShieldCheck />} title="Hardened">Private networks blocked, DNS verified, cookies isolated per site, rate limited.</Feature>
         </div>
         <p className="mt-8 text-xs text-muted-foreground">
-          Conduit doesn't bypass logins, CAPTCHAs, DRM, paywalls or regional restrictions. Some sites refuse proxied traffic.
+          University Study Tools doesn't bypass logins, CAPTCHAs, DRM, paywalls or regional restrictions. Some sites refuse proxied traffic.
         </p>
       </div>
     </div>

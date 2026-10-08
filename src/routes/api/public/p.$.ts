@@ -7,7 +7,7 @@ import { hostAllowed } from "@/lib/auth/sites";
 const h = async ({ request }: { request: Request }) => {
   const core = await import("@/lib/auth/core.server");
   const viewer = await core.viewerFromCookie(core.cookieFrom(request.headers.get("cookie")));
-  if (!viewer) return errorPage(401, "Sign in required", "Sign in to Conduit to browse.");
+  if (!viewer) return errorPage(401, "Sign in required", "Sign in to University Study Tools to browse.");
   if (!viewer.allSites) {
     const u = new URL(request.url);
     const target = fromProxyPath(u.pathname + u.search);

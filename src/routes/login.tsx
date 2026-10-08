@@ -5,10 +5,10 @@ import { getViewer, signIn } from "@/lib/auth/auth.functions";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Conduit" },
-      { name: "description", content: "Sign in to your Conduit account." },
-      { property: "og:title", content: "Sign in — Conduit" },
-      { property: "og:description", content: "Sign in to your Conduit account." },
+      { title: "Sign in — University Study Tools" },
+      { name: "description", content: "Sign in to your University Study Tools account." },
+      { property: "og:title", content: "Sign in — University Study Tools" },
+      { property: "og:description", content: "Sign in to your University Study Tools account." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -44,8 +44,8 @@ function Login() {
   return (
     <div className="bg-grid flex min-h-dvh items-center justify-center bg-background px-5 text-foreground">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">Web gateway</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Conduit</h1>
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-primary">Study tools</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">University Study Tools</h1>
         <p className="mt-1 text-sm text-muted-foreground">Accounts are created by an admin.</p>
         <label className="mt-6 block text-sm font-medium">Username
           <input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="off"

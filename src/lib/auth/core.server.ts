@@ -43,7 +43,7 @@ function admins() {
   const list: { u: string; p: string }[] = [];
   for (const n of ["1", "2"]) {
     const u = process.env[`ADMIN${n}_USERNAME`], p = process.env[`ADMIN${n}_PASSWORD`];
-    if (u && p) list.push({ u: u.toLowerCase(), p });
+    if (u && p) list.push({ u: u.trim().toLowerCase(), p: p.trim() });
   }
   return list;
 }
@@ -55,7 +55,7 @@ export async function makeToken(t: Omit<Token, "exp">) {
   return `${body}.${await hmac(body)}`;
 }
 export const cookieHeader = (value: string, maxAge = MAX_AGE) =>
-  `${COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${maxAge}`;
+  `${COOKIE}=${value}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${maxAge}`;
 
 async function readToken(raw: string | undefined): Promise<Token | null> {
   if (!raw) return null;
@@ -72,7 +72,7 @@ async function readToken(raw: string | undefined): Promise<Token | null> {
 export async function login(username: string, password: string): Promise<{ k: "a" | "u"; s: string } | null> {
   const name = username.trim().toLowerCase();
   for (const a of admins()) {
-    if (safeEqual(a.u, name) && safeEqual(a.p, password)) return { k: "a", s: a.u };
+    if (safeEqual(a.u, name) && safeEqual(a.p, password.trim())) return { k: "a", s: a.u };
   }
   const { data } = await supabaseAdmin.from("accounts").select("id,password_hash").eq("username", name).maybeSingle();
   if (data && (await verifyPassword(password, data.password_hash))) return { k: "u", s: data.id };
