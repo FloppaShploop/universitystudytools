@@ -14,7 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      accounts: {
+        Row: {
+          all_sites: boolean
+          allowed_sites: string[]
+          created_at: string
+          id: string
+          password_hash: string
+          username: string
+        }
+        Insert: {
+          all_sites?: boolean
+          allowed_sites?: string[]
+          created_at?: string
+          id?: string
+          password_hash: string
+          username: string
+        }
+        Update: {
+          all_sites?: boolean
+          allowed_sites?: string[]
+          created_at?: string
+          id?: string
+          password_hash?: string
+          username?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
