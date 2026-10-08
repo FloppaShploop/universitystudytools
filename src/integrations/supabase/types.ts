@@ -14,10 +14,43 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_sessions: {
+        Row: {
+          account_id: string
+          created_at: string
+          device_id: string
+          id: string
+          last_seen: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          device_id: string
+          id?: string
+          last_seen?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          device_id?: string
+          id?: string
+          last_seen?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_sessions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts: {
         Row: {
           all_sites: boolean
           allowed_sites: string[]
+          banned_until: string | null
           created_at: string
           id: string
           password_hash: string
@@ -26,6 +59,7 @@ export type Database = {
         Insert: {
           all_sites?: boolean
           allowed_sites?: string[]
+          banned_until?: string | null
           created_at?: string
           id?: string
           password_hash: string
@@ -34,6 +68,7 @@ export type Database = {
         Update: {
           all_sites?: boolean
           allowed_sites?: string[]
+          banned_until?: string | null
           created_at?: string
           id?: string
           password_hash?: string
