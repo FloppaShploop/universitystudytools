@@ -12,4 +12,6 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Netlify sets NETLIFY=true during its builds; target Netlify Functions there.
+  ...(process.env["NETLIFY"] ? { nitro: { preset: "netlify" } } : {}),
 });
