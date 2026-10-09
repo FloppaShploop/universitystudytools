@@ -10,8 +10,8 @@ async function current() {
 async function requireAdmin() {
   const { core, v } = await current();
   if (v?.role !== "admin") throw new Error("Admins only");
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return { core, db: supabaseAdmin };
+  const { db } = await import("./db.server");
+  return { core, db };
 }
 
 export const getViewer = createServerFn({ method: "GET" }).handler(async () => (await current()).v);
@@ -44,15 +44,10 @@ const sitesSchema = z.array(z.string().max(253)).max(100);
 
 export const listAccounts = createServerFn({ method: "GET" }).handler(async () => {
   const { core, db } = await requireAdmin();
-  const { data, error } = await db.from("accounts").select("id,username,all_sites,allowed_sites,created_at,banned_until").order("created_at");
-  if (error) throw new Error(error.message);
   const since = new Date(Date.now() - core.ACTIVE_WINDOW_MS).toISOString();
-  const { data: sess } = await db.from("account_sessions").select("account_id").gt("last_seen", since);
-  const counts = new Map<string, number>();
-  for (const r of sess ?? []) counts.set(r.account_id, (counts.get(r.account_id) ?? 0) + 1);
+  const data = await db<{ id: string; username: string; all_sites: boolean; allowed_sites: string[]; created_at: string; banned_until: string | null; devices: number }[]>("list_accounts", { since });
   return data.map((a) => ({
     ...a,
-    devices: counts.get(a.id) ?? 0,
     banned: !!a.banned_until && new Date(a.banned_until).getTime() > Date.now(),
   }));
 });
@@ -68,13 +63,13 @@ export const createAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { core, db } = await requireAdmin();
-    const { error } = await db.from("accounts").insert({
+    const r = await db<{ ok: boolean }>("create_account", {
       username: data.username,
       password_hash: await core.hashPassword(data.password),
       all_sites: data.allSites,
       allowed_sites: data.sites,
     });
-    if (error) return { ok: false as const, error: error.code === "23505" ? "That username is taken" : error.message };
+    if (!r.ok) return { ok: false as const, error: "That username is taken" };
     return { ok: true as const };
   });
 
@@ -84,10 +79,12 @@ export const updateAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { core, db } = await requireAdmin();
-    const patch: { all_sites: boolean; allowed_sites: string[]; password_hash?: string } = { all_sites: data.allSites, allowed_sites: data.sites };
-    if (data.password) patch.password_hash = await core.hashPassword(data.password);
-    const { error } = await db.from("accounts").update(patch).eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await db("update_account", {
+      id: data.id,
+      all_sites: data.allSites,
+      allowed_sites: data.sites,
+      password_hash: data.password ? await core.hashPassword(data.password) : null,
+    });
     core.clearViewerCache(data.id);
     return { ok: true };
   });
@@ -96,8 +93,7 @@ export const deleteAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }) => {
     const { core, db } = await requireAdmin();
-    const { error } = await db.from("accounts").delete().eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await db("delete_account", { id: data.id });
     core.clearViewerCache(data.id);
     return { ok: true };
   });
@@ -109,7 +105,7 @@ export const moderateAccount = createServerFn({ method: "POST" })
     if (data.action === "kick") await core.kickAccount(data.id);
     else if (data.action === "ban") await core.banAccount(data.id);
     else {
-      await db.from("accounts").update({ banned_until: null }).eq("id", data.id);
+      await db("set_ban", { id: data.id, until: null });
       core.clearViewerCache(data.id);
     }
     return { ok: true };
