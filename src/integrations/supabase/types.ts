@@ -76,12 +76,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_config: {
+        Row: {
+          name: string
+          value: string
+        }
+        Insert: {
+          name: string
+          value: string
+        }
+        Update: {
+          name?: string
+          value?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      app_db: {
+        Args: { p_args?: Json; p_key: string; p_op: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
