@@ -1,5 +1,5 @@
 // Server-only: password hashing, signed session cookies, admin checks.
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { db } from "./db.server";
 
 export const COOKIE = "conduit_session";
 const MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -84,37 +84,35 @@ export async function login(username: string, password: string, deviceId: string
     if (safeEqual(a.u, name) && safeEqual(a.p, password.trim())) return { ok: true, k: "a", s: a.u };
   }
   const bad = { ok: false as const, error: "Wrong username or password" };
-  const { data } = await supabaseAdmin.from("accounts").select("id,password_hash,banned_until").eq("username", name).maybeSingle();
+  const data = await db<{ id: string; password_hash: string; banned_until: string | null } | null>("account_by_username", { username: name });
   if (!data || !(await verifyPassword(password, data.password_hash))) return bad;
   if (data.banned_until && new Date(data.banned_until).getTime() > Date.now()) {
     return { ok: false, error: `This account is banned until ${new Date(data.banned_until).toUTCString()}.` };
   }
   // Same browser signing in again replaces its old session (tabs share one device).
-  await supabaseAdmin.from("account_sessions").delete().eq("account_id", data.id).eq("device_id", deviceId);
+  await db("sessions_delete_device", { account_id: data.id, device_id: deviceId });
   const since = new Date(Date.now() - ACTIVE_WINDOW_MS).toISOString();
-  const { count } = await supabaseAdmin.from("account_sessions").select("id", { count: "exact", head: true })
-    .eq("account_id", data.id).gt("last_seen", since);
-  if ((count ?? 0) > 0) {
+  const count = await db<number>("sessions_active_count", { account_id: data.id, since });
+  if (count > 0) {
     await banAccount(data.id);
     return { ok: false, error: "This account was signed in on another device, so it has been banned for one week." };
   }
-  const { data: sess, error } = await supabaseAdmin.from("account_sessions").insert({ account_id: data.id, device_id: deviceId }).select("id").single();
-  if (error || !sess) return { ok: false, error: "Couldn't sign in. Try again." };
-  return { ok: true, k: "u", s: sess.id };
+  const sessId = await db<string>("session_create", { account_id: data.id, device_id: deviceId });
+  return { ok: true, k: "u", s: sessId };
 }
 
 export async function banAccount(id: string) {
-  await supabaseAdmin.from("accounts").update({ banned_until: new Date(Date.now() + BAN_MS).toISOString() }).eq("id", id);
+  await db("set_ban", { id, until: new Date(Date.now() + BAN_MS).toISOString() });
   await kickAccount(id);
 }
 export async function kickAccount(id: string) {
-  await supabaseAdmin.from("account_sessions").delete().eq("account_id", id);
+  await db("sessions_delete_account", { account_id: id });
   for (const [k, v] of cache) if (v.accountId === id) cache.delete(k);
 }
 export async function endSession(raw: string | undefined) {
   const t = await readToken(raw);
   if (t?.k === "u") {
-    await supabaseAdmin.from("account_sessions").delete().eq("id", t.s);
+    await db("session_delete", { id: t.s });
     cache.delete(t.s);
   }
 }
@@ -130,15 +128,15 @@ export async function viewerFromCookie(raw: string | undefined): Promise<Viewer 
   }
   const hit = cache.get(t.s);
   if (hit && Date.now() - hit.at < 15_000) return hit.v;
-  const { data: sess } = await supabaseAdmin.from("account_sessions").select("account_id,last_seen").eq("id", t.s).maybeSingle();
+  const sess = await db<{ account_id: string; last_seen: string } | null>("session_get", { id: t.s });
   let v: Viewer | null = null;
   if (sess) {
-    const { data } = await supabaseAdmin.from("accounts").select("id,username,all_sites,allowed_sites,banned_until").eq("id", sess.account_id).maybeSingle();
+    const data = await db<{ id: string; username: string; all_sites: boolean; allowed_sites: string[]; banned_until: string | null } | null>("account_by_id", { id: sess.account_id });
     const banned = data?.banned_until && new Date(data.banned_until).getTime() > Date.now();
     if (data && !banned) {
       v = { role: "user", id: data.id, username: data.username, allSites: data.all_sites, sites: data.allowed_sites };
       if (Date.now() - new Date(sess.last_seen).getTime() > 60_000) {
-        await supabaseAdmin.from("account_sessions").update({ last_seen: new Date().toISOString() }).eq("id", t.s);
+        await db("session_touch", { id: t.s });
       }
     }
   }
